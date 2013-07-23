@@ -154,17 +154,17 @@ void amp_search
 
 	size_t result_size = 0;
 	clock_t end, start;
-	const int tile_size = 1000;
+	
 	printf ("AMP-Searching...\n");
 	
 	start = clock();
-	parallel_for_each(concurrency::extent<1>(size).tile<tile_size>(), 
-	[=](tiled_index<tile_size> idx) restrict(amp)
+	parallel_for_each(concurrency::extent<1>(size), [=](index<1> idx) restrict(amp)
 	{
-		const T_cash_account_row& t = cash[idx.local];
+		const T_cash_account_row& t = cash[idx];
 
-		tile_static unsigned filter[last_e];
-		tile_static unsigned range[last_e]; 
+		unsigned filter[last_e];
+		unsigned min[last_e]; 
+		unsigned max[last_e]; 
 
 		filter[amount_of_money_e]	= use_amount_of_money;
 		filter[gender_e]			= use_gender;
@@ -172,18 +172,24 @@ void amp_search
 		filter[code_e]				= use_code;
 		filter[height_e]			= use_height;
 
-		range[amount_of_money_e]	= max_range.amount_of_money - min_range.amount_of_money; 
-		range[gender_e]				= max_range.gender			- min_range.gender;
-		range[age_e]				= max_range.age				- min_range.age;
-		range[code_e]				= max_range.code			- min_range.code;
-		range[height_e]				= max_range.height			- min_range.height;
+		min[amount_of_money_e]		= min_range.amount_of_money; 
+		min[gender_e]				= min_range.gender;
+		min[age_e]					= min_range.age;
+		min[code_e]					= min_range.code;
+		min[height_e]				= min_range.height;
+
+		max[amount_of_money_e]		= max_range.amount_of_money; 
+		max[gender_e]				= max_range.gender;
+		max[age_e]					= max_range.age;
+		max[code_e]					= max_range.code;
+		max[height_e]				= max_range.height;
 		
-		if(!filter[amount_of_money_e]		|| (range[amount_of_money_e] >= t.amount_of_money))
-			if((!filter[gender_e]			|| (range[gender_e]	>= t.gender	)))
-				if(!filter[code_e]			|| (range[code_e]	>= t.code	)) 
-					if(!filter[height_e]	|| (range[height_e]	>= t.height	))
-						if(!filter[age_e]	|| (range[age_e]	>= t.age	))
-							result[idx.global] = 1;
+		result[idx] = 
+			((!filter[amount_of_money_e]|| (t.amount_of_money >= min[amount_of_money_e] && t.amount_of_money <= max[amount_of_money_e]))
+				&& (!filter[gender_e]	|| (t.gender >= min[gender_e] && t.gender <= max[gender_e]))
+				&& (!filter[code_e]		|| (t.code >= min[code_e] && t.code <= max[code_e]))
+				&& (!filter[height_e]	|| (t.height >= min[height_e] && t.height <= max[height_e]))
+				&& (!filter[age_e]		|| (t.age >= min[age_e] && t.age <= max[age_e])));						
 	});
 	//result.synchronize();	// Если не выполняется больше работы.
 	result_size = std::count(&result[0], &result[size], 1);
