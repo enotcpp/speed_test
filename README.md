@@ -2,7 +2,7 @@ speed_test
 ==========
 
 Attempt to accelerate C-search algorithm using PPL and AMP.
-Results:
+Results on MSVC12 without compile optimizations:
 
 Generated rows: 10000000
 C-Searching...
@@ -15,6 +15,21 @@ PPL-Searching...
 PPL-search took 0.157000 seconds.
 Found rows: 38
 
+Results with all compile optimizations:
+
+Generated rows: 10000000
+C-Searching...
+C-search took 0.065000 seconds.
+Found rows: 38
+AMP-Searching...
+AMP-search took 0.090000 seconds.
+Found rows: 38
+PPL-Searching...
+PPL-search took 0.050000 seconds.
+Found rows: 38
+
+
+//+----------------------------------------------+
 Based on aricle
 http://habrahabr.ru/post/182356/
 and code
